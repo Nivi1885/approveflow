@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ApproveFlow</title>
+<link rel="manifest" href="/manifest.json">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f1f5f9; color: #1e293b; }
+  .hidden { display: none !important; }
+
+  /* Auth */
+  #authPage { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e40af, #3b82f6); }
+  .auth-card { background: white; padding: 2rem; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .auth-card h1 { color: #1e40af; font-size: 1.8rem; margin-bottom: 0.5rem; text-align: center; }
+  .auth-card p { color: #64748b; text-align: center; margin-bottom: 1.5rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.3rem; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 0.6rem 0.9rem; border: 1.5px solid #e2e8f0; border-radius: 8px;
+    font-size: 0.95rem; transition: border 0.2s; outline: none;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #3b82f6; }
+  .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
+  .btn-primary { background: #1e40af; color: white; width: 100%; padding: 0.75rem; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-success { background: #10b981; color: white; }
+  .btn-danger { background: #ef4444; color: white; }
+  .btn-warning { background: #f59e0b; color: white; }
+  .btn-secondary { background: #6b7280; color: white; }
+  .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+  .auth-toggle { text-align: center; margin-top: 1rem; font-size: 0.9rem; color: #64748b; }
+  .auth-toggle span { color: #1e40af; cursor: pointer; font-weight: 600; }
+
+  /* Layout */
+  #appPage { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; background: #1e293b; color: white; display: flex; flex-direction: column; }
+  .sidebar-logo { padding: 1.5rem; font-size: 1.3rem; font-weight: 700; color: #60a5fa; border-bottom: 1px solid #334155; }
+  .sidebar-user { padding: 1rem 1.5rem; font-size: 0.85rem; color: #94a3b8; border-bottom: 1px solid #334155; }
+  .sidebar-user strong { display: block; color: white; font-size: 0.95rem; }
+  .sidebar nav { flex: 1; padding: 1rem 0; }
+  .nav-item { display: block; width: 100%; text-align: left; padding: 0.75rem 1.5rem; background: none; border: none;
+    color: #94a3b8; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+  .nav-item:hover, .nav-item.active { background: #334155; color: white; border-left: 3px solid #3b82f6; }
+  .sidebar-logout { padding: 1rem 1.5rem; border-top: 1px solid #334155; }
+  .btn-logout { background: #ef4444; color: white; width: 100%; padding: 0.5rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+
+  /* Main */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { background: white; padding: 1rem 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
+  .topbar h2 { font-size: 1.2rem; color: #1e293b; }
+  .content { flex: 1; padding: 1.5rem; overflow-y: auto; }
+
+  /* Dashboard */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card { background: white; border-radius: 12px; padding: 1.2rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .stat-card .label { font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
+  .stat-card .value { font-size: 2rem; font-weight: 700; margin-top: 0.3rem; }
+  .stat-card.total .value { color: #1e40af; }
+  .stat-card.pending .value { color: #f59e0b; }
+  .stat-card.approved .value { color: #10b981; }
+  .stat-card.rejected .value { color: #ef4444; }
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .chart-card { background: white; border-radius: 12px; padding: 1.2rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .chart-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; color: #374151; }
+  .bar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+  .bar-label { font-size: 0.8rem; width: 100px; color: #374151; }
+  .bar-track { flex: 1; background: #f1f5f9; border-radius: 99px; height: 10px; }
+  .bar-fill { height: 10px; border-radius: 99px; background: #3b82f6; transition: width 0.5s; }
+  .bar-count { font-size: 0.8rem; color: #64748b; width: 24px; text-align: right; }
+
+  /* Table */
+  .card { background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
+  .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: gap; gap: 0.75rem; }
+  .card-header h3 { font-size: 1rem; font-weight: 700; }
+  .filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .filters input, .filters select { padding: 0.4rem 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; outline: none; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #f8fafc; padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase; }
+  td { padding: 0.75rem 1rem; border-top: 1px solid #f1f5f9; font-size: 0.88rem; vertical-align: middle; }
+  tr:hover td { background: #f8fafc; }
+  .badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+  .badge-pending { background: #fef3c7; color: #92400e; }
+  .badge-review { background: #dbeafe; color: #1e40af; }
+  .badge-clarify { background: #fce7f3; color: #9d174d; }
+  .badge-l1 { background: #d1fae5; color: #065f46; }
+  .badge-approved { background: #d1fae5; color: #065f46; }
+  .badge-rejected { background: #fee2e2; color: #991b1b; }
+  .badge-finance { background: #ede9fe; color: #5b21b6; }
+  .badge-it { background: #dbeafe; color: #1e40af; }
+  .badge-procurement { background: #fef3c7; color: #92400e; }
+  .badge-legal { background: #fce7f3; color: #9d174d; }
+  .badge-hr { background: #d1fae5; color: #065f46; }
+
+  /* Form */
+  .form-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); max-width: 700px; }
+  .form-card h3 { margin-bottom: 1.5rem; font-size: 1.1rem; color: #1e293b; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .form-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+
+  /* Detail */
+  .detail-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem; }
+  .detail-title { font-size: 1.2rem; font-weight: 700; }
+  .detail-meta { font-size: 0.85rem; color: #64748b; margin-top: 0.25rem; }
+  .detail-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .section-title { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin: 1.5rem 0 0.75rem; }
+  .activity-item { display: flex; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .activity-dot { width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; margin-top: 6px; flex-shrink: 0; }
+  .activity-content { flex: 1; }
+  .activity-action { font-weight: 600; font-size: 0.9rem; }
+  .activity-by { font-size: 0.8rem; color: #64748b; }
+  .activity-comment { font-size: 0.85rem; color: #374151; margin-top: 0.2rem; background: #f8fafc; padding: 0.4rem 0.75rem; border-radius: 6px; }
+  .doc-item { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.75rem; background: #f8fafc; border-radius: 8px; margin-bottom: 0.5rem; }
+  .doc-name { font-size: 0.88rem; font-weight: 600; }
+  .doc-version { font-size: 0.75rem; color: #64748b; }
+
+  /* Action Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .modal { background: white; border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .modal h3 { margin-bottom: 1rem; font-size: 1.1rem; }
+  .modal-actions { display: flex; gap: 0.75rem; margin-top: 1rem; justify-content: flex-end; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1e293b; color: white; padding: 0.75rem 1.25rem;
+    border-radius: 10px; font-size: 0.9rem; z-index: 200; animation: slideIn 0.3s ease; }
+  @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  @media (max-width: 768px) {
+    .sidebar { width: 60px; }
+    .sidebar-logo, .sidebar-user, .nav-item span, .sidebar-logout { display: none; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Auth Page -->
+<div id="authPage">
+  <div class="auth-card">
+    <h1>🔷 ApproveFlow</h1>
+    <p>Request & Approval Management</p>
+    <div id="loginForm">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="your@email.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary" onclick="login()">Login</button>
+      <div class="auth-toggle">Don't have an account? <span onclick="toggleAuth()">Register</span></div>
+    </div>
+    <div id="registerForm" class="hidden">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="regName" placeholder="Your Name">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="regEmail" placeholder="your@email.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="regPassword" placeholder="••••••••">
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <select id="regRole">
+          <option value="requester">Requester (User A)</option>
+          <option value="approver_l1_finance">L1 Approver - Finance/IT/Procurement (User B)</option>
+          <option value="approver_l1_legal">L1 Approver - Legal/HR (User C)</option>
+          <option value="approver_final">Final Approver (User D)</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="register()">Register</button>
+      <div class="auth-toggle">Already have an account? <span onclick="toggleAuth()">Login</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- App Page -->
+<div id="appPage" class="hidden">
+  <div class="sidebar">
+    <div class="sidebar-logo">🔷 ApproveFlow</div>
+    <div class="sidebar-user">
+      <strong id="sidebarName">User</strong>
+      <span id="sidebarRole">Role</span>
+    </div>
+    <nav>
+      <button class="nav-item active" onclick="showPage('dashboard')"><span>📊 Dashboard</span></button>
+      <button class="nav-item" onclick="showPage('requests')" id="navRequests"><span>📋 Requests</span></button>
+      <button class="nav-item hidden" onclick="showPage('newRequest')" id="navNew"><span>➕ New Request</span></button>
+    </nav>
+    <div class="sidebar-logout">
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <h2 id="pageTitle">Dashboard</h2>
+      <div id="topbarActions"></div>
+    </div>
+    <div class="content">
+      <!-- Dashboard -->
+      <div id="pageDashboard">
+        <div class="stats-grid">
+          <div class="stat-card total"><div class="label">Total</div><div class="value" id="statTotal">0</div></div>
+          <div class="stat-card pending"><div class="label">Pending</div><div class="value" id="statPending">0</div></div>
+          <div class="stat-card approved"><div class="label">Approved</div><div class="value" id="statApproved">0</div></div>
+          <div class="stat-card rejected"><div class="label">Rejected</div><div class="value" id="statRejected">0</div></div>
+        </div>
+        <div class="charts-grid">
+          <div class="chart-card"><h3>By Request Type</h3><div id="chartByType"></div></div>
+          <div class="chart-card"><h3>By Status</h3><div id="chartByStatus"></div></div>
+        </div>
+      </div>
+
+      <!-- Requests List -->
+      <div id="pageRequests" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h3>All Requests</h3>
+            <div class="filters">
+              <input type="text" id="searchInput" placeholder="Search..." oninput="filterRequests()">
+              <select id="filterStatus" onchange="filterRequests()">
+                <option value="">All Status</option>
+                <option>Pending Review</option>
+                <option>Under Review</option>
+                <option>Needs Clarification</option>
+                <option>Approved L1</option>
+                <option>Pending Final</option>
+                <option>Approved</option>
+                <option>Rejected</option>
+              </select>
+              <select id="filterType" onchange="filterRequests()">
+                <option value="">All Types</option>
+                <option>Finance</option>
+                <option>IT</option>
+                <option>Procurement</option>
+                <option>Legal</option>
+                <option>HR</option>
+              </select>
+              <button class="btn btn-success btn-sm" onclick="exportExcel()">📥 Export Excel</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Title</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Submitted By</th>
+                  <th>Date</th>
+                  <th>Latest Comment</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="requestsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- New Request -->
+      <div id="pageNewRequest" class="hidden">
+        <div class="form-card">
+          <h3>➕ New Request</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Title</label>
+              <input type="text" id="reqTitle" placeholder="Request title">
+            </div>
+            <div class="form-group">
+              <label>Request Type</label>
+              <select id="reqType">
+                <option>Finance</option>
+                <option>IT</option>
+                <option>Procurement</option>
+                <option>Legal</option>
+                <option>HR</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="reqDesc" rows="4" placeholder="Describe your request..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Attach Document (optional)</label>
+            <input type="file" id="reqFile" accept=".pdf,.doc,.docx,.xlsx,.png,.jpg">
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="submitRequest()">Submit Request</button>
+            <button class="btn btn-secondary" onclick="showPage('requests')">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Request Detail -->
+      <div id="pageDetail" class="hidden">
+        <div class="detail-card">
+          <div class="detail-header">
+            <div>
+              <div class="detail-title" id="detailTitle"></div>
+              <div class="detail-meta" id="detailMeta"></div>
+            </div>
+            <div class="detail-actions" id="detailActions"></div>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <div id="detailDesc" style="padding:0.6rem;background:#f8fafc;border-radius:8px;font-size:0.9rem;"></div>
+          </div>
+          <div class="section-title">📎 Documents</div>
+          <div id="detailDocs"></div>
+          <div class="section-title">📝 Activity History</div>
+          <div id="detailActivity"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Action Modal -->
+<div id="actionModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h3 id="modalTitle">Action</h3>
+    <div class="form-group">
+      <label>Comment</label>
+      <textarea id="modalComment" rows="3" placeholder="Add your comment..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Attach / Update Document (optional)</label>
+      <input type="file" id="modalFile" accept=".pdf,.doc,.docx,.xlsx,.png,.jpg">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modalConfirmBtn" onclick="confirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin;
+let token = localStorage.getItem('af_token');
+let currentUser = JSON.parse(localStorage.getItem('af_user') || 'null');
+let allRequests = [];
+let currentAction = null;
+let currentRequestId = null;
+let socket = null;
+
+// ─── Auth ───────────────────────────────────────────────
+function toggleAuth() {
+  document.getElementById('loginForm').classList.toggle('hidden');
+  document.getElementById('registerForm').classList.toggle('hidden');
+}
+
+async function login() {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) return showToast('Please fill all fields');
+  try {
+    const res = await fetch(`${API}/api/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) return showToast(data.message || 'Login failed');
+    saveSession(data);
+  } catch (e) { showToast('Connection error — is the server running?'); }
+}
+
+async function register() {
+  const name = document.getElementById('regName').value;
+  const email = document.getElementById('regEmail').value;
+  const password = document.getElementById('regPassword').value;
+  const role = document.getElementById('regRole').value;
+  if (!name || !email || !password) return showToast('Please fill all fields');
+  try {
+    const res = await fetch(`${API}/api/auth/register`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, role })
+    });
+    const data = await res.json();
+    if (!res.ok) return showToast(data.message || 'Registration failed');
+    saveSession(data);
+  } catch (e) { showToast('Connection error'); }
+}
+
+function saveSession(data) {
+  token = data.token;
+  currentUser = data.user;
+  localStorage.setItem('af_token', token);
+  localStorage.setItem('af_user', JSON.stringify(currentUser));
+  initApp();
+}
+
+function logout() {
+  localStorage.removeItem('af_token');
+  localStorage.removeItem('af_user');
+  token = null; currentUser = null;
+  document.getElementById('authPage').classList.remove('hidden');
+  document.getElementById('appPage').classList.add('hidden');
+}
+
+// ─── Init ────────────────────────────────────────────────
+function initApp() {
+  document.getElementById('authPage').classList.add('hidden');
+  document.getElementById('appPage').classList.remove('hidden');
+  document.getElementById('sidebarName').textContent = currentUser.name;
+  document.getElementById('sidebarRole').textContent = roleLabel(currentUser.role);
+
+  // Show/hide nav items
+  if (currentUser.role === 'requester') {
+    document.getElementById('navNew').classList.remove('hidden');
+  }
+
+  // Socket
+  socket = io(API);
+  socket.on('requestUpdate', () => { loadRequests(); loadDashboard(); });
+
+  loadDashboard();
+  loadRequests();
+}
+
+function roleLabel(role) {
+  const map = { requester: 'Requester', approver_l1_finance: 'L1 Approver (Fin/IT/Proc)', approver_l1_legal: 'L1 Approver (Legal/HR)', approver_final: 'Final Approver' };
+  return map[role] || role;
+}
+
+// ─── Pages ───────────────────────────────────────────────
+function showPage(page) {
+  ['dashboard','requests','newRequest','detail'].forEach(p => {
+    document.getElementById('page' + p.charAt(0).toUpperCase() + p.slice(1)).classList.add('hidden');
+  });
+  const titles = { dashboard: 'Dashboard', requests: 'Requests', newRequest: 'New Request', detail: 'Request Detail' };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  if (page === 'dashboard') { document.getElementById('pageDashboard').classList.remove('hidden'); document.querySelectorAll('.nav-item')[0].classList.add('active'); }
+  else if (page === 'requests') { document.getElementById('pageRequests').classList.remove('hidden'); document.querySelectorAll('.nav-item')[1].classList.add('active'); }
+  else if (page === 'newRequest') { document.getElementById('pageNewRequest').classList.remove('hidden'); }
+  else if (page === 'detail') { document.getElementById('pageDetail').classList.remove('hidden'); }
+}
+
+// ─── Dashboard ───────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const res = await fetch(`${API}/api/requests/stats/dashboard`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    document.getElementById('statTotal').textContent = data.total || 0;
+    document.getElementById('statPending').textContent = data.pending || 0;
+    document.getElementById('statApproved').textContent = data.approved || 0;
+    document.getElementById('statRejected').textContent = data.rejected || 0;
+    renderBars('chartByType', data.byType || []);
+    renderBars('chartByStatus', data.byStatus || []);
+  } catch (e) {}
+}
+
+function renderBars(containerId, data) {
+  const container = document.getElementById(containerId);
+  if (!data.length) { container.innerHTML = '<p style="color:#94a3b8;font-size:0.85rem;">No data yet</p>'; return; }
+  const max = Math.max(...data.map(d => d.count));
+  container.innerHTML = data.map(d => `
+    <div class="bar">
+      <div class="bar-label">${d._id}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${max ? (d.count/max*100) : 0}%"></div></div>
+      <div class="bar-count">${d.count}</div>
+    </div>`).join('');
+}
+
+// ─── Requests ────────────────────────────────────────────
+async function loadRequests() {
+  try {
+    const res = await fetch(`${API}/api/requests`, { headers: { Authorization: `Bearer ${token}` } });
+    allRequests = await res.json();
+    renderRequests(allRequests);
+  } catch (e) {}
+}
+
+function filterRequests() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const status = document.getElementById('filterStatus').value;
+  const type = document.getElementById('filterType').value;
+  const filtered = allRequests.filter(r =>
+    (!search || r.title.toLowerCase().includes(search) || (r.submittedByName || '').toLowerCase().includes(search)) &&
+    (!status || r.status === status) &&
+    (!type || r.requestType === type)
+  );
+  renderRequests(filtered);
+}
+
+function renderRequests(list) {
+  const body = document.getElementById('requestsBody');
+  if (!list.length) { body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:2rem;">No requests found</td></tr>'; return; }
+  body.innerHTML = list.map((r, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td><strong>${r.title}</strong></td>
+      <td><span class="badge badge-${r.requestType.toLowerCase()}">${r.requestType}</span></td>
+      <td>${statusBadge(r.status)}</td>
+      <td>${r.submittedByName || '-'}</td>
+      <td>${new Date(r.createdAt).toLocaleDateString()}</td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.latestComment || '-'}</td>
+      <td><button class="btn btn-secondary btn-sm" onclick="viewRequest('${r._id}')">View</button></td>
+    </tr>`).join('');
+}
+
+function statusBadge(status) {
+  const map = {
+    'Pending Review': 'badge-pending', 'Under Review': 'badge-review',
+    'Needs Clarification': 'badge-clarify', 'Approved L1': 'badge-l1',
+    'Pending Final': 'badge-review', 'Approved': 'badge-approved', 'Rejected': 'badge-rejected'
+  };
+  return `<span class="badge ${map[status] || ''}">${status}</span>`;
+}
+
+// ─── New Request ─────────────────────────────────────────
+async function submitRequest() {
+  const title = document.getElementById('reqTitle').value;
+  const description = document.getElementById('reqDesc').value;
+  const requestType = document.getElementById('reqType').value;
+  if (!title || !description) return showToast('Please fill all required fields');
+
+  let document = null;
+  const file = document.getElementById ? null : null;
+  const fileEl = window.document.getElementById('reqFile');
+  if (fileEl.files[0]) {
+    document = await fileToBase64(fileEl.files[0]);
+  }
+
+  try {
+    const res = await fetch(`${API}/api/requests`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ title, description, requestType, document })
+    });
+    if (!res.ok) return showToast('Failed to submit');
+    showToast('✅ Request submitted!');
+    document.getElementById('reqTitle').value = '';
+    document.getElementById('reqDesc').value = '';
+    fileEl.value = '';
+    showPage('requests');
+    loadRequests();
+  } catch (e) { showToast('Error submitting request'); }
+}
+
+// ─── Request Detail ──────────────────────────────────────
+async function viewRequest(id) {
+  try {
+    const res = await fetch(`${API}/api/requests/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+    const r = await res.json();
+    currentRequestId = id;
+    window.document.getElementById('detailTitle').textContent = r.title;
+    window.document.getElementById('detailMeta').innerHTML = `${statusBadge(r.status)} &nbsp; <span class="badge badge-${r.requestType.toLowerCase()}">${r.requestType}</span> &nbsp; Submitted by ${r.submittedByName} on ${new Date(r.createdAt).toLocaleDateString()}`;
+    window.document.getElementById('detailDesc').textContent = r.description;
+
+    // Documents
+    const docsEl = window.document.getElementById('detailDocs');
+    if (r.documents && r.documents.length) {
+      docsEl.innerHTML = r.documents.map(d => `
+        <div class="doc-item">
+          <div><div class="doc-name">📎 ${d.name}</div><div class="doc-version">v${d.version} — ${d.uploadedBy} — ${new Date(d.uploadedAt).toLocaleDateString()}</div></div>
+          ${d.data ? `<button class="btn btn-secondary btn-sm" onclick="downloadDoc('${d.name}','${d.data}')">Download</button>` : ''}
+        </div>`).join('');
+    } else { docsEl.innerHTML = '<p style="color:#94a3b8;font-size:0.85rem;">No documents attached</p>'; }
+
+    // Activity
+    const actEl = window.document.getElementById('detailActivity');
+    if (r.activity && r.activity.length) {
+      actEl.innerHTML = [...r.activity].reverse().map(a => `
+        <div class="activity-item">
+          <div class="activity-dot"></div>
+          <div class="activity-content">
+            <div class="activity-action">${a.action}</div>
+            <div class="activity-by">by ${a.performedByName} — ${new Date(a.timestamp).toLocaleString()}</div>
+            ${a.comment ? `<div class="activity-comment">${a.comment}</div>` : ''}
+          </div>
+        </div>`).join('');
+    } else { actEl.innerHTML = '<p style="color:#94a3b8;font-size:0.85rem;">No activity yet</p>'; }
+
+    // Actions based on role & status
+    const actionsEl = window.document.getElementById('detailActions');
+    actionsEl.innerHTML = '';
+    const role = currentUser.role;
+    const status = r.status;
+
+    if ((role === 'approver_l1_finance' && ['Finance','IT','Procurement'].includes(r.requestType) && status === 'Pending Review') ||
+        (role === 'approver_l1_legal' && ['Legal','HR'].includes(r.requestType) && status === 'Pending Review')) {
+      actionsEl.innerHTML += actionBtns(['approve','reject','clarify'], r);
+    } else if (role === 'approver_final' && (status === 'Approved L1')) {
+      actionsEl.innerHTML += actionBtns(['approve','reject','clarify'], r);
+    } else if (role === 'requester' && status === 'Needs Clarification') {
+      actionsEl.innerHTML += `<button class="btn btn-warning btn-sm" onclick="openModal('resubmit','${id}')">Resubmit with Clarification</button>`;
+    }
+
+    // WhatsApp notify
+    const waMsg = encodeURIComponent(`ApproveFlow Update:\nRequest: ${r.title}\nType: ${r.requestType}\nStatus: ${r.status}\nSubmitted by: ${r.submittedByName}`);
+    actionsEl.innerHTML += ` <a href="https://wa.me/?text=${waMsg}" target="_blank" class="btn btn-success btn-sm">💬 WhatsApp</a>`;
+
+    showPage('detail');
+  } catch (e) { showToast('Error loading request'); }
+}
+
+function actionBtns(actions, r) {
+  return actions.map(a => {
+    const map = { approve: ['btn-success','✅ Approve'], reject: ['btn-danger','❌ Reject'], clarify: ['btn-warning','❓ Clarify'] };
+    return `<button class="btn ${map[a][0]} btn-sm" onclick="openModal('${a}','${r._id}')">${map[a][1]}</button>`;
+  }).join(' ');
+}
+
+// ─── Modal ───────────────────────────────────────────────
+function openModal(action, requestId) {
+  currentAction = action;
+  currentRequestId = requestId;
+  const titles = { approve: '✅ Approve Request', reject: '❌ Reject Request', clarify: '❓ Request Clarification', resubmit: '🔄 Resubmit Request' };
+  window.document.getElementById('modalTitle').textContent = titles[action] || action;
+  window.document.getElementById('modalComment').value = '';
+  window.document.getElementById('modalFile').value = '';
+  window.document.getElementById('actionModal').classList.remove('hidden');
+}
+
+function closeModal() {
+  window.document.getElementById('actionModal').classList.add('hidden');
+  currentAction = null;
+}
+
+async function confirmAction() {
+  const comment = window.document.getElementById('modalComment').value;
+  const fileEl = window.document.getElementById('modalFile');
+  let document = null;
+  if (fileEl.files[0]) document = await fileToBase64(fileEl.files[0]);
+
+  try {
+    const res = await fetch(`${API}/api/requests/${currentRequestId}/action`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ action: currentAction, comment, document })
+    });
+    if (!res.ok) return showToast('Action failed');
+    closeModal();
+    showToast('✅ Action completed!');
+    viewRequest(currentRequestId);
+    loadRequests();
+    loadDashboard();
+  } catch (e) { showToast('Error performing action'); }
+}
+
+// ─── Helpers ─────────────────────────────────────────────
+function fileToBase64(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({ name: file.name, data: reader.result });
+    reader.readAsDataURL(file);
+  });
+}
+
+function downloadDoc(name, data) {
+  const a = window.document.createElement('a');
+  a.href = data; a.download = name; a.click();
+}
+
+function exportExcel() {
+  const rows = allRequests.map(r => ({
+    Title: r.title, Type: r.requestType, Status: r.status,
+    'Submitted By': r.submittedByName, Date: new Date(r.createdAt).toLocaleDateString(),
+    'Latest Comment': r.latestComment || ''
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Requests');
+  XLSX.writeFile(wb, 'approveflow-requests.xlsx');
+}
+
+function showToast(msg) {
+  const t = window.document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  window.document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ─── Auto-login ──────────────────────────────────────────
+if (token && currentUser) initApp();
+
+// PWA
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js');
+</script>
+</body>
+</html>
