@@ -450,38 +450,8 @@ function showPage(page) {
 
 // ─── Dashboard ────────────────────────────────────────────
 async function loadDashboard() {
-  try {
-    const res = await fetch(`${API}/api/requests/stats/dashboard`, { headers: { Authorization: `Bearer ${token}` } });
-    const data = await res.json();
-
-    // For requesters — show only their own stats
-    if (currentUser.role === 'requester') {
-      const mine = allRequests.length ? allRequests : [];
-      const myTotal = mine.length;
-      const myPending = mine.filter(r => !['Approved','Rejected'].includes(r.status)).length;
-      const myApproved = mine.filter(r => r.status === 'Approved').length;
-      const myRejected = mine.filter(r => r.status === 'Rejected').length;
-      document.getElementById('statTotal').textContent = myTotal;
-      document.getElementById('statPending').textContent = myPending;
-      document.getElementById('statApproved').textContent = myApproved;
-      document.getElementById('statRejected').textContent = myRejected;
-      // Chart by type for their requests
-      const typeMap = {};
-      mine.forEach(r => { typeMap[r.requestType] = (typeMap[r.requestType]||0)+1; });
-      renderBars('chartByType', Object.entries(typeMap).map(([k,v])=>({_id:k,count:v})));
-      const statusMap = {};
-      mine.forEach(r => { statusMap[r.status] = (statusMap[r.status]||0)+1; });
-      renderBars('chartByStatus', Object.entries(statusMap).map(([k,v])=>({_id:k,count:v})));
-    } else {
-      // Approvers see all stats
-      document.getElementById('statTotal').textContent = data.total || 0;
-      document.getElementById('statPending').textContent = data.pending || 0;
-      document.getElementById('statApproved').textContent = data.approved || 0;
-      document.getElementById('statRejected').textContent = data.rejected || 0;
-      renderBars('chartByType', data.byType || []);
-      renderBars('chartByStatus', data.byStatus || []);
-    }
-  } catch (e) {}
+  // Dashboard is now driven by loadRequests → updateDashboard
+  if (allRequests.length > 0) updateDashboard();
 }
 
 function renderBars(containerId, data) {
@@ -500,9 +470,39 @@ function renderBars(containerId, data) {
 async function loadRequests() {
   try {
     const res = await fetch(`${API}/api/requests`, { headers: { Authorization: `Bearer ${token}` } });
-    allRequests = await res.json();
+    const data = await res.json();
+    allRequests = Array.isArray(data) ? data : [];
     renderRequests(allRequests);
+    updateDashboard();
   } catch (e) {}
+}
+
+function updateDashboard() {
+  const role = currentUser.role;
+  let relevant = [];
+  if (role === 'requester') {
+    relevant = allRequests;
+  } else if (role === 'approver_l1_finance') {
+    relevant = allRequests.filter(r => ['Finance','IT','Procurement'].includes(r.requestType));
+  } else if (role === 'approver_l1_legal') {
+    relevant = allRequests.filter(r => ['Legal','HR'].includes(r.requestType));
+  } else if (role === 'approver_final') {
+    relevant = allRequests;
+  }
+  const total = relevant.length;
+  const pending = relevant.filter(r => !['Approved','Rejected'].includes(r.status)).length;
+  const approved = relevant.filter(r => r.status === 'Approved').length;
+  const rejected = relevant.filter(r => r.status === 'Rejected').length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statApproved').textContent = approved;
+  document.getElementById('statRejected').textContent = rejected;
+  const typeMap = {};
+  relevant.forEach(r => { typeMap[r.requestType] = (typeMap[r.requestType]||0)+1; });
+  renderBars('chartByType', Object.entries(typeMap).map(([k,v])=>({_id:k,count:v})));
+  const statusMap = {};
+  relevant.forEach(r => { statusMap[r.status] = (statusMap[r.status]||0)+1; });
+  renderBars('chartByStatus', Object.entries(statusMap).map(([k,v])=>({_id:k,count:v})));
 }
 
 function filterRequests() {
@@ -604,14 +604,26 @@ async function viewRequest(id) {
     actionsEl.innerHTML = '';
     const role = currentUser.role;
     const status = r.status;
-    if ((role==='approver_l1_finance' && ['Finance','IT','Procurement'].includes(r.requestType) && status==='Pending Review') ||
-        (role==='approver_l1_legal' && ['Legal','HR'].includes(r.requestType) && status==='Pending Review')) {
+
+    // L1 Finance/IT/Procurement approver — can act only on their dept + Pending Review
+    if (role==='approver_l1_finance' && ['Finance','IT','Procurement'].includes(r.requestType) && status==='Pending Review') {
       actionsEl.innerHTML += actionBtns(['approve','reject','clarify'], r);
-    } else if (role==='approver_final' && status==='Approved L1') {
-      actionsEl.innerHTML += actionBtns(['approve','reject','clarify'], r);
-    } else if (role==='requester' && status==='Needs Clarification') {
-      actionsEl.innerHTML += `<button class="btn btn-warning btn-sm" onclick="openModal('resubmit','${id}')">🔄 Resubmit</button>`;
     }
+    // L1 Legal/HR approver — can act only on their dept + Pending Review
+    else if (role==='approver_l1_legal' && ['Legal','HR'].includes(r.requestType) && status==='Pending Review') {
+      actionsEl.innerHTML += actionBtns(['approve','reject','clarify'], r);
+    }
+    // Final approver — can act only on Approved L1 requests
+    else if (role==='approver_final' && status==='Approved L1') {
+      actionsEl.innerHTML += actionBtns(['approve','reject','clarify'], r);
+    }
+    // Requester — can resubmit if clarification needed
+    else if (role==='requester' && status==='Needs Clarification') {
+      actionsEl.innerHTML += `<button class="btn btn-warning btn-sm" onclick="openModal('resubmit','${id}')">🔄 Resubmit with Clarification</button>`;
+    }
+    // All other cases — VIEW ONLY (no action buttons shown)
+
+    // WhatsApp notify always available
     const waMsg = encodeURIComponent(`ApproveFlow Update:\nRequest: ${r.title}\nType: ${r.requestType}\nStatus: ${r.status}\nSubmitted by: ${r.submittedByName}`);
     actionsEl.innerHTML += ` <a href="https://wa.me/?text=${waMsg}" target="_blank" class="btn btn-success btn-sm">💬 WhatsApp</a>`;
     showPage('detail');
