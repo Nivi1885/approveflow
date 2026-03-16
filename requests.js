@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const Request = require('../models/Request');
-const auth = require('../middleware/auth');
+const Request = require('./Request');
+const auth = require('./auth');
 
 // Get all requests (filtered by role)
 router.get('/', auth, async (req, res) => {
