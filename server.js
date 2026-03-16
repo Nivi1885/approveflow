@@ -31,8 +31,8 @@ io.on('connection', (socket) => {
 app.set('io', io);
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/requests', require('./routes/requests'));
+app.use('/api/auth', require('./auth'));
+app.use('/api/requests', require('./requests'));
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'OK', message: 'ApproveFlow API Running' }));
