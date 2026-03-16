@@ -15,7 +15,7 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// Dashboard stats — must be before /:id
+// Dashboard stats — MUST be before /:id route
 router.get('/stats/dashboard', auth, async (req, res) => {
   try {
     const total = await Request.countDocuments();
@@ -44,22 +44,25 @@ router.get('/:id', auth, async (req, res) => {
 // Create request
 router.post('/', auth, async (req, res) => {
   try {
-    const { title, description, requestType, document: doc } = req.body;
+    const { title, description, requestType, document: docFile } = req.body;
     if (!title || !description || !requestType) {
       return res.status(400).json({ message: 'Title, description and requestType are required' });
     }
-    const docs = doc ? [{ name: doc.name, data: doc.data, uploadedBy: req.user.name, version: 1 }] : [];
+    const userName = req.user.name || 'Unknown';
+    const docs = docFile ? [{ name: docFile.name, data: docFile.data, uploadedBy: userName, version: 1 }] : [];
     const request = new Request({
-      title, description, requestType,
+      title,
+      description,
+      requestType,
       submittedBy: req.user.id,
-      submittedByName: req.user.name,
+      submittedByName: userName,
       status: 'Pending Review',
       documents: docs,
-      activity: [{ action: 'Submitted', performedByName: req.user.name, comment: 'Request submitted' }]
+      activity: [{ action: 'Submitted', performedByName: userName, comment: 'Request submitted' }]
     });
     await request.save();
     const io = req.app.get('io');
-    io.emit('requestUpdate', request);
+    if (io) io.emit('requestUpdate', request);
     res.status(201).json(request);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -69,13 +72,14 @@ router.post('/', auth, async (req, res) => {
 // Action: approve, reject, clarify, resubmit
 router.put('/:id/action', auth, async (req, res) => {
   try {
-    const { action, comment, document: doc } = req.body;
+    const { action, comment, document: docFile } = req.body;
     const request = await Request.findById(req.params.id);
     if (!request) return res.status(404).json({ message: 'Request not found' });
 
+    const userName = req.user.name || 'Unknown';
     let newStatus = request.status;
+
     if (action === 'approve') {
-      // L1 approve → Approved L1, Final approve → Approved
       if (request.status === 'Pending Review') newStatus = 'Approved L1';
       else if (request.status === 'Approved L1') newStatus = 'Approved';
       else newStatus = 'Approved';
@@ -89,16 +93,25 @@ router.put('/:id/action', auth, async (req, res) => {
 
     request.status = newStatus;
     request.latestComment = comment || '';
-    request.activity.push({ action, performedByName: req.user.name, comment: comment || '' });
+    request.activity.push({
+      action,
+      performedByName: userName,
+      comment: comment || ''
+    });
 
-    if (doc) {
+    if (docFile) {
       const lastVersion = request.documents.length > 0 ? request.documents[request.documents.length - 1].version : 0;
-      request.documents.push({ name: doc.name, data: doc.data, uploadedBy: req.user.name, version: lastVersion + 1 });
+      request.documents.push({
+        name: docFile.name,
+        data: docFile.data,
+        uploadedBy: userName,
+        version: lastVersion + 1
+      });
     }
 
     await request.save();
     const io = req.app.get('io');
-    io.emit('requestUpdate', request);
+    if (io) io.emit('requestUpdate', request);
     res.json(request);
   } catch (err) {
     res.status(500).json({ message: err.message });
