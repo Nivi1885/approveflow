@@ -14,7 +14,8 @@ const io = new Server(server, {
 // Middleware
 app.use(cors());
 app.use(express.json());
-
+app.use(express.static(__dirname + '/public'));
+app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
