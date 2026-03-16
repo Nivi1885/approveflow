@@ -434,8 +434,10 @@ function roleLabel(role) {
 
 // ─── Pages ────────────────────────────────────────────────
 function showPage(page) {
-  ['Dashboard','Requests','NewRequest','Detail'].forEach(p => {
-    document.getElementById('page' + p).classList.add('hidden');
+  const pageIds = ['pageDashboard','pageRequests','pageNewRequest','pageDetail'];
+  pageIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
   });
   const titles = { dashboard: 'Dashboard', requests: 'All Requests', newRequest: 'New Request', detail: 'Request Detail' };
   document.getElementById('pageTitle').textContent = titles[page] || page;
@@ -451,12 +453,34 @@ async function loadDashboard() {
   try {
     const res = await fetch(`${API}/api/requests/stats/dashboard`, { headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json();
-    document.getElementById('statTotal').textContent = data.total || 0;
-    document.getElementById('statPending').textContent = data.pending || 0;
-    document.getElementById('statApproved').textContent = data.approved || 0;
-    document.getElementById('statRejected').textContent = data.rejected || 0;
-    renderBars('chartByType', data.byType || []);
-    renderBars('chartByStatus', data.byStatus || []);
+
+    // For requesters — show only their own stats
+    if (currentUser.role === 'requester') {
+      const mine = allRequests.length ? allRequests : [];
+      const myTotal = mine.length;
+      const myPending = mine.filter(r => !['Approved','Rejected'].includes(r.status)).length;
+      const myApproved = mine.filter(r => r.status === 'Approved').length;
+      const myRejected = mine.filter(r => r.status === 'Rejected').length;
+      document.getElementById('statTotal').textContent = myTotal;
+      document.getElementById('statPending').textContent = myPending;
+      document.getElementById('statApproved').textContent = myApproved;
+      document.getElementById('statRejected').textContent = myRejected;
+      // Chart by type for their requests
+      const typeMap = {};
+      mine.forEach(r => { typeMap[r.requestType] = (typeMap[r.requestType]||0)+1; });
+      renderBars('chartByType', Object.entries(typeMap).map(([k,v])=>({_id:k,count:v})));
+      const statusMap = {};
+      mine.forEach(r => { statusMap[r.status] = (statusMap[r.status]||0)+1; });
+      renderBars('chartByStatus', Object.entries(statusMap).map(([k,v])=>({_id:k,count:v})));
+    } else {
+      // Approvers see all stats
+      document.getElementById('statTotal').textContent = data.total || 0;
+      document.getElementById('statPending').textContent = data.pending || 0;
+      document.getElementById('statApproved').textContent = data.approved || 0;
+      document.getElementById('statRejected').textContent = data.rejected || 0;
+      renderBars('chartByType', data.byType || []);
+      renderBars('chartByStatus', data.byStatus || []);
+    }
   } catch (e) {}
 }
 
@@ -515,14 +539,14 @@ function statusBadge(status) {
 
 // ─── New Request ──────────────────────────────────────────
 async function submitRequest() {
-  const title = document.getElementById('reqTitle').value;
-  const description = document.getElementById('reqDesc').value;
-  const requestType = document.getElementById('reqType').value;
-  if (!title || !description) return showToast('Please fill all required fields');
+  const titleVal = document.getElementById('reqTitle').value.trim();
+  const descVal = document.getElementById('reqDesc').value.trim();
+  const typeVal = document.getElementById('reqType').value;
+  if (!titleVal || !descVal) return showToast('⚠️ Please fill Title and Description');
 
   const fileEl = document.getElementById('reqFile');
   let attachedDoc = null;
-  if (fileEl.files[0]) {
+  if (fileEl && fileEl.files && fileEl.files[0]) {
     attachedDoc = await fileToBase64(fileEl.files[0]);
   }
 
@@ -530,16 +554,18 @@ async function submitRequest() {
     const res = await fetch(`${API}/api/requests`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ title, description, requestType, document: attachedDoc })
+      body: JSON.stringify({ title: titleVal, description: descVal, requestType: typeVal, document: attachedDoc })
     });
-    if (!res.ok) return showToast('Failed to submit');
+    const data = await res.json();
+    if (!res.ok) return showToast(data.message || 'Failed to submit');
     showToast('✅ Request submitted successfully!');
     document.getElementById('reqTitle').value = '';
     document.getElementById('reqDesc').value = '';
-    fileEl.value = '';
+    if (fileEl) fileEl.value = '';
     showPage('requests');
     loadRequests();
-  } catch (e) { showToast('Error submitting request'); }
+    loadDashboard();
+  } catch (e) { showToast('Error: ' + e.message); }
 }
 
 // ─── Request Detail ───────────────────────────────────────
@@ -647,15 +673,23 @@ function downloadDoc(name, data) {
 }
 
 function exportExcel() {
-  const rows = allRequests.map(r => ({
-    Title: r.title, Type: r.requestType, Status: r.status,
-    'Submitted By': r.submittedByName, Date: new Date(r.createdAt).toLocaleDateString(),
-    'Latest Comment': r.latestComment || ''
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Requests');
-  XLSX.writeFile(wb, 'approveflow-requests.xlsx');
+  if (!allRequests || !allRequests.length) return showToast('⚠️ No data to export');
+  try {
+    const rows = allRequests.map((r, i) => ({
+      '#': i+1,
+      'Title': r.title || '',
+      'Type': r.requestType || '',
+      'Status': r.status || '',
+      'Submitted By': r.submittedByName || '',
+      'Date': new Date(r.createdAt).toLocaleDateString(),
+      'Latest Comment': r.latestComment || ''
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Requests');
+    XLSX.writeFile(wb, 'approveflow-requests.xlsx');
+    showToast('✅ Excel exported!');
+  } catch(e) { showToast('Export failed: ' + e.message); }
 }
 
 function showToast(msg) {
