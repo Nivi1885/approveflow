@@ -14,7 +14,7 @@ const io = new Server(server, {
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('../frontend/public'));
+
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
