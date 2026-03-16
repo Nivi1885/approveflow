@@ -538,18 +538,22 @@ function statusBadge(status) {
 
 // ─── New Request ──────────────────────────────────────────
 async function submitRequest() {
-  const titleVal = document.getElementById('reqTitle').value.trim();
-  const descVal = document.getElementById('reqDesc').value.trim();
-  const typeVal = document.getElementById('reqType').value;
-  if (!titleVal || !descVal) return showToast('⚠️ Please fill Title and Description');
-
-  const fileEl = document.getElementById('reqFile');
-  let attachedDoc = null;
-  if (fileEl && fileEl.files && fileEl.files[0]) {
-    attachedDoc = await fileToBase64(fileEl.files[0]);
-  }
-
   try {
+    const titleVal = document.getElementById('reqTitle').value.trim();
+    const descVal = document.getElementById('reqDesc').value.trim();
+    const typeVal = document.getElementById('reqType').value;
+    if (!titleVal || !descVal) return showToast('⚠️ Please fill Title and Description');
+
+    let attachedDoc = null;
+    try {
+      const fileEl = document.getElementById('reqFile');
+      if (fileEl && fileEl.files && fileEl.files.length > 0) {
+        attachedDoc = await fileToBase64(fileEl.files[0]);
+      }
+    } catch(fileErr) {
+      console.log('File read skipped:', fileErr.message);
+    }
+
     const res = await fetch(`${API}/api/requests`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -560,11 +564,13 @@ async function submitRequest() {
     showToast('✅ Request submitted successfully!');
     document.getElementById('reqTitle').value = '';
     document.getElementById('reqDesc').value = '';
-    if (fileEl) fileEl.value = '';
+    try { document.getElementById('reqFile').value = ''; } catch(e) {}
     showPage('requests');
     loadRequests();
-    loadDashboard();
-  } catch (e) { showToast('Error: ' + e.message); }
+  } catch (e) { 
+    showToast('Error: ' + e.message);
+    console.error('Submit error:', e);
+  }
 }
 
 // ─── Request Detail ───────────────────────────────────────
