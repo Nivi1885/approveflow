@@ -29,8 +29,8 @@ router.get('/:id', auth, async (req, res) => {
 // Create request
 router.post('/', auth, async (req, res) => {
   try {
-    const { title, description, requestType, document } = req.body;
-    const docs = document ? [{ name: document.name, data: document.data, uploadedBy: req.user.name, version: 1 }] : [];
+    const { title, description, requestType, document: docFile } = req.body;
+    const docs = docFile ? [{ name: docFile.name, data: docFile.data, uploadedBy: req.user.name, version: 1 }] : [];
     const request = new Request({
       title, description, requestType,
       submittedBy: req.user.id,
