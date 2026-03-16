@@ -9,80 +9,91 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Segoe UI', sans-serif; background: #f1f5f9; color: #1e293b; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f4ff; color: #1e293b; }
   .hidden { display: none !important; }
 
   /* Auth */
-  #authPage { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e40af, #3b82f6); }
-  .auth-card { background: white; padding: 2rem; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
-  .auth-card h1 { color: #1e40af; font-size: 1.8rem; margin-bottom: 0.5rem; text-align: center; }
-  .auth-card p { color: #64748b; text-align: center; margin-bottom: 1.5rem; }
+  #authPage { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f4c81 100%); }
+  .auth-card { background: white; padding: 2rem; border-radius: 20px; width: 100%; max-width: 420px; box-shadow: 0 25px 80px rgba(0,0,0,0.4); border-top: 4px solid #3b82f6; }
+  .auth-logo { text-align: center; margin-bottom: 1.5rem; }
+  .auth-logo h1 { color: #1e40af; font-size: 1.8rem; font-weight: 800; }
+  .auth-logo p { color: #64748b; font-size: 0.9rem; margin-top: 0.25rem; }
   .form-group { margin-bottom: 1rem; }
-  .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.3rem; }
+  .form-group label { display: block; font-size: 0.82rem; font-weight: 700; color: #374151; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.5px; }
   .form-group input, .form-group select, .form-group textarea {
-    width: 100%; padding: 0.6rem 0.9rem; border: 1.5px solid #e2e8f0; border-radius: 8px;
-    font-size: 0.95rem; transition: border 0.2s; outline: none;
+    width: 100%; padding: 0.65rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 10px;
+    font-size: 0.95rem; transition: border 0.2s; outline: none; background: #f8fafc;
   }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #3b82f6; }
-  .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
-  .btn-primary { background: #1e40af; color: white; width: 100%; padding: 0.75rem; }
-  .btn-primary:hover { background: #1d4ed8; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #3b82f6; background: white; }
+  .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 700; transition: all 0.2s; }
+  .btn-primary { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; width: 100%; padding: 0.8rem; font-size: 1rem; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(59,130,246,0.4); }
   .btn-success { background: #10b981; color: white; }
+  .btn-success:hover { background: #059669; }
   .btn-danger { background: #ef4444; color: white; }
+  .btn-danger:hover { background: #dc2626; }
   .btn-warning { background: #f59e0b; color: white; }
   .btn-secondary { background: #6b7280; color: white; }
-  .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+  .btn-sm { padding: 0.35rem 0.85rem; font-size: 0.8rem; border-radius: 8px; }
   .auth-toggle { text-align: center; margin-top: 1rem; font-size: 0.9rem; color: #64748b; }
-  .auth-toggle span { color: #1e40af; cursor: pointer; font-weight: 600; }
+  .auth-toggle span { color: #1e40af; cursor: pointer; font-weight: 700; }
 
   /* Layout */
   #appPage { display: flex; min-height: 100vh; }
-  .sidebar { width: 240px; background: #1e293b; color: white; display: flex; flex-direction: column; }
-  .sidebar-logo { padding: 1.5rem; font-size: 1.3rem; font-weight: 700; color: #60a5fa; border-bottom: 1px solid #334155; }
-  .sidebar-user { padding: 1rem 1.5rem; font-size: 0.85rem; color: #94a3b8; border-bottom: 1px solid #334155; }
+  .sidebar { width: 250px; background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); color: white; display: flex; flex-direction: column; box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
+  .sidebar-logo { padding: 1.5rem; font-size: 1.3rem; font-weight: 800; color: #60a5fa; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 0.5rem; }
+  .sidebar-user { padding: 1rem 1.5rem; border-bottom: 1px solid #334155; background: rgba(255,255,255,0.03); }
   .sidebar-user strong { display: block; color: white; font-size: 0.95rem; }
+  .sidebar-user span { font-size: 0.78rem; color: #60a5fa; background: rgba(96,165,250,0.15); padding: 0.15rem 0.5rem; border-radius: 99px; display: inline-block; margin-top: 0.3rem; }
   .sidebar nav { flex: 1; padding: 1rem 0; }
   .nav-item { display: block; width: 100%; text-align: left; padding: 0.75rem 1.5rem; background: none; border: none;
-    color: #94a3b8; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
-  .nav-item:hover, .nav-item.active { background: #334155; color: white; border-left: 3px solid #3b82f6; }
+    color: #94a3b8; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; border-left: 3px solid transparent; }
+  .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+  .nav-item.active { background: rgba(59,130,246,0.15); color: #60a5fa; border-left: 3px solid #3b82f6; }
   .sidebar-logout { padding: 1rem 1.5rem; border-top: 1px solid #334155; }
-  .btn-logout { background: #ef4444; color: white; width: 100%; padding: 0.5rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+  .btn-logout { background: rgba(239,68,68,0.15); color: #f87171; width: 100%; padding: 0.6rem; border-radius: 10px; border: 1px solid rgba(239,68,68,0.3); cursor: pointer; font-weight: 700; transition: all 0.2s; }
+  .btn-logout:hover { background: #ef4444; color: white; }
 
   /* Main */
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .topbar { background: white; padding: 1rem 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
-  .topbar h2 { font-size: 1.2rem; color: #1e293b; }
-  .content { flex: 1; padding: 1.5rem; overflow-y: auto; }
+  .topbar { background: white; padding: 1rem 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 8px rgba(0,0,0,0.05); }
+  .topbar h2 { font-size: 1.2rem; color: #1e293b; font-weight: 700; }
+  .content { flex: 1; padding: 1.5rem; overflow-y: auto; background: #f0f4ff; }
 
   /* Dashboard */
   .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-  .stat-card { background: white; border-radius: 12px; padding: 1.2rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-  .stat-card .label { font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
-  .stat-card .value { font-size: 2rem; font-weight: 700; margin-top: 0.3rem; }
-  .stat-card.total .value { color: #1e40af; }
+  .stat-card { background: white; border-radius: 14px; padding: 1.3rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-top: 4px solid; position: relative; overflow: hidden; }
+  .stat-card::after { content: ''; position: absolute; right: -10px; top: -10px; width: 70px; height: 70px; border-radius: 50%; opacity: 0.08; }
+  .stat-card.total { border-color: #3b82f6; } .stat-card.total::after { background: #3b82f6; }
+  .stat-card.pending { border-color: #f59e0b; } .stat-card.pending::after { background: #f59e0b; }
+  .stat-card.approved { border-color: #10b981; } .stat-card.approved::after { background: #10b981; }
+  .stat-card.rejected { border-color: #ef4444; } .stat-card.rejected::after { background: #ef4444; }
+  .stat-card .label { font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+  .stat-card .value { font-size: 2.2rem; font-weight: 800; margin-top: 0.4rem; }
+  .stat-card.total .value { color: #3b82f6; }
   .stat-card.pending .value { color: #f59e0b; }
   .stat-card.approved .value { color: #10b981; }
   .stat-card.rejected .value { color: #ef4444; }
   .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  .chart-card { background: white; border-radius: 12px; padding: 1.2rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-  .chart-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; color: #374151; }
-  .bar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
-  .bar-label { font-size: 0.8rem; width: 100px; color: #374151; }
+  .chart-card { background: white; border-radius: 14px; padding: 1.3rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .chart-card h3 { font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; }
+  .bar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.7rem; }
+  .bar-label { font-size: 0.8rem; width: 110px; color: #374151; font-weight: 600; }
   .bar-track { flex: 1; background: #f1f5f9; border-radius: 99px; height: 10px; }
-  .bar-fill { height: 10px; border-radius: 99px; background: #3b82f6; transition: width 0.5s; }
-  .bar-count { font-size: 0.8rem; color: #64748b; width: 24px; text-align: right; }
+  .bar-fill { height: 10px; border-radius: 99px; background: linear-gradient(90deg, #3b82f6, #60a5fa); transition: width 0.6s ease; }
+  .bar-count { font-size: 0.8rem; color: #64748b; width: 24px; text-align: right; font-weight: 700; }
 
   /* Table */
-  .card { background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
-  .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: gap; gap: 0.75rem; }
+  .card { background: white; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
+  .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; background: white; }
   .card-header h3 { font-size: 1rem; font-weight: 700; }
   .filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-  .filters input, .filters select { padding: 0.4rem 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; outline: none; }
+  .filters input, .filters select { padding: 0.4rem 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; outline: none; background: #f8fafc; }
   table { width: 100%; border-collapse: collapse; }
-  th { background: #f8fafc; padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase; }
-  td { padding: 0.75rem 1rem; border-top: 1px solid #f1f5f9; font-size: 0.88rem; vertical-align: middle; }
-  tr:hover td { background: #f8fafc; }
-  .badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+  th { background: #f8fafc; padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 0.8rem 1rem; border-top: 1px solid #f1f5f9; font-size: 0.88rem; vertical-align: middle; }
+  tr:hover td { background: #f8fbff; }
+  .badge { display: inline-block; padding: 0.25rem 0.65rem; border-radius: 99px; font-size: 0.73rem; font-weight: 700; }
   .badge-pending { background: #fef3c7; color: #92400e; }
   .badge-review { background: #dbeafe; color: #1e40af; }
   .badge-clarify { background: #fce7f3; color: #9d174d; }
@@ -96,42 +107,42 @@
   .badge-hr { background: #d1fae5; color: #065f46; }
 
   /* Form */
-  .form-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); max-width: 700px; }
-  .form-card h3 { margin-bottom: 1.5rem; font-size: 1.1rem; color: #1e293b; }
+  .form-card { background: white; border-radius: 14px; padding: 1.75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); max-width: 720px; }
+  .form-card h3 { margin-bottom: 1.5rem; font-size: 1.1rem; color: #1e293b; font-weight: 800; }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
   .form-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
 
   /* Detail */
-  .detail-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-  .detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem; }
-  .detail-title { font-size: 1.2rem; font-weight: 700; }
-  .detail-meta { font-size: 0.85rem; color: #64748b; margin-top: 0.25rem; }
+  .detail-card { background: white; border-radius: 14px; padding: 1.75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem; padding-bottom: 1.25rem; border-bottom: 1px solid #f1f5f9; }
+  .detail-title { font-size: 1.3rem; font-weight: 800; }
+  .detail-meta { font-size: 0.85rem; color: #64748b; margin-top: 0.4rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
   .detail-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-  .section-title { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin: 1.5rem 0 0.75rem; }
-  .activity-item { display: flex; gap: 0.75rem; margin-bottom: 0.75rem; }
-  .activity-dot { width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; margin-top: 6px; flex-shrink: 0; }
+  .section-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin: 1.5rem 0 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #f1f5f9; }
+  .activity-item { display: flex; gap: 0.75rem; margin-bottom: 0.9rem; }
+  .activity-dot { width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; margin-top: 5px; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
   .activity-content { flex: 1; }
-  .activity-action { font-weight: 600; font-size: 0.9rem; }
-  .activity-by { font-size: 0.8rem; color: #64748b; }
-  .activity-comment { font-size: 0.85rem; color: #374151; margin-top: 0.2rem; background: #f8fafc; padding: 0.4rem 0.75rem; border-radius: 6px; }
-  .doc-item { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.75rem; background: #f8fafc; border-radius: 8px; margin-bottom: 0.5rem; }
-  .doc-name { font-size: 0.88rem; font-weight: 600; }
-  .doc-version { font-size: 0.75rem; color: #64748b; }
+  .activity-action { font-weight: 700; font-size: 0.9rem; color: #1e293b; }
+  .activity-by { font-size: 0.78rem; color: #94a3b8; margin-top: 0.1rem; }
+  .activity-comment { font-size: 0.85rem; color: #374151; margin-top: 0.3rem; background: #f8fafc; padding: 0.5rem 0.75rem; border-radius: 8px; border-left: 3px solid #3b82f6; }
+  .doc-item { display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 1rem; background: #f8fafc; border-radius: 10px; margin-bottom: 0.5rem; border: 1px solid #e2e8f0; }
+  .doc-name { font-size: 0.88rem; font-weight: 700; }
+  .doc-version { font-size: 0.75rem; color: #64748b; margin-top: 0.1rem; }
 
-  /* Action Modal */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
-  .modal { background: white; border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-  .modal h3 { margin-bottom: 1rem; font-size: 1.1rem; }
-  .modal-actions { display: flex; gap: 0.75rem; margin-top: 1rem; justify-content: flex-end; }
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
+  .modal { background: white; border-radius: 20px; padding: 1.75rem; width: 100%; max-width: 500px; box-shadow: 0 25px 80px rgba(0,0,0,0.3); }
+  .modal h3 { margin-bottom: 1.25rem; font-size: 1.1rem; font-weight: 800; }
+  .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; justify-content: flex-end; }
 
   /* Toast */
-  .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1e293b; color: white; padding: 0.75rem 1.25rem;
-    border-radius: 10px; font-size: 0.9rem; z-index: 200; animation: slideIn 0.3s ease; }
+  .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1e293b; color: white; padding: 0.8rem 1.4rem;
+    border-radius: 12px; font-size: 0.9rem; font-weight: 600; z-index: 200; animation: slideIn 0.3s ease; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
   @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
   @media (max-width: 768px) {
     .sidebar { width: 60px; }
-    .sidebar-logo, .sidebar-user, .nav-item span, .sidebar-logout { display: none; }
+    .sidebar-logo span, .sidebar-user, .nav-item span, .sidebar-logout { display: none; }
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
     .charts-grid { grid-template-columns: 1fr; }
     .form-row { grid-template-columns: 1fr; }
@@ -143,8 +154,10 @@
 <!-- Auth Page -->
 <div id="authPage">
   <div class="auth-card">
-    <h1>🔷 ApproveFlow</h1>
-    <p>Request & Approval Management</p>
+    <div class="auth-logo">
+      <h1>🔷 ApproveFlow</h1>
+      <p>Request & Approval Management System</p>
+    </div>
     <div id="loginForm">
       <div class="form-group">
         <label>Email</label>
@@ -154,8 +167,8 @@
         <label>Password</label>
         <input type="password" id="loginPassword" placeholder="••••••••">
       </div>
-      <button class="btn btn-primary" onclick="login()">Login</button>
-      <div class="auth-toggle">Don't have an account? <span onclick="toggleAuth()">Register</span></div>
+      <button class="btn btn-primary" onclick="login()">Login →</button>
+      <div class="auth-toggle">Don't have an account? <span onclick="toggleAuth()">Register here</span></div>
     </div>
     <div id="registerForm" class="hidden">
       <div class="form-group">
@@ -179,8 +192,8 @@
           <option value="approver_final">Final Approver (User D)</option>
         </select>
       </div>
-      <button class="btn btn-primary" onclick="register()">Register</button>
-      <div class="auth-toggle">Already have an account? <span onclick="toggleAuth()">Login</span></div>
+      <button class="btn btn-primary" onclick="register()">Create Account →</button>
+      <div class="auth-toggle">Already have an account? <span onclick="toggleAuth()">Login here</span></div>
     </div>
   </div>
 </div>
@@ -188,18 +201,18 @@
 <!-- App Page -->
 <div id="appPage" class="hidden">
   <div class="sidebar">
-    <div class="sidebar-logo">🔷 ApproveFlow</div>
+    <div class="sidebar-logo">🔷 <span>ApproveFlow</span></div>
     <div class="sidebar-user">
       <strong id="sidebarName">User</strong>
       <span id="sidebarRole">Role</span>
     </div>
     <nav>
-      <button class="nav-item active" onclick="showPage('dashboard')"><span>📊 Dashboard</span></button>
-      <button class="nav-item" onclick="showPage('requests')" id="navRequests"><span>📋 Requests</span></button>
-      <button class="nav-item hidden" onclick="showPage('newRequest')" id="navNew"><span>➕ New Request</span></button>
+      <button class="nav-item active" onclick="showPage('dashboard')">📊 Dashboard</button>
+      <button class="nav-item" onclick="showPage('requests')" id="navRequests">📋 Requests</button>
+      <button class="nav-item hidden" onclick="showPage('newRequest')" id="navNew">➕ New Request</button>
     </nav>
     <div class="sidebar-logout">
-      <button class="btn-logout" onclick="logout()">Logout</button>
+      <button class="btn-logout" onclick="logout()">⬅ Logout</button>
     </div>
   </div>
   <div class="main">
@@ -211,14 +224,14 @@
       <!-- Dashboard -->
       <div id="pageDashboard">
         <div class="stats-grid">
-          <div class="stat-card total"><div class="label">Total</div><div class="value" id="statTotal">0</div></div>
+          <div class="stat-card total"><div class="label">Total Requests</div><div class="value" id="statTotal">0</div></div>
           <div class="stat-card pending"><div class="label">Pending</div><div class="value" id="statPending">0</div></div>
           <div class="stat-card approved"><div class="label">Approved</div><div class="value" id="statApproved">0</div></div>
           <div class="stat-card rejected"><div class="label">Rejected</div><div class="value" id="statRejected">0</div></div>
         </div>
         <div class="charts-grid">
-          <div class="chart-card"><h3>By Request Type</h3><div id="chartByType"></div></div>
-          <div class="chart-card"><h3>By Status</h3><div id="chartByStatus"></div></div>
+          <div class="chart-card"><h3>📊 By Request Type</h3><div id="chartByType"></div></div>
+          <div class="chart-card"><h3>📈 By Status</h3><div id="chartByStatus"></div></div>
         </div>
       </div>
 
@@ -228,7 +241,7 @@
           <div class="card-header">
             <h3>All Requests</h3>
             <div class="filters">
-              <input type="text" id="searchInput" placeholder="Search..." oninput="filterRequests()">
+              <input type="text" id="searchInput" placeholder="🔍 Search..." oninput="filterRequests()">
               <select id="filterStatus" onchange="filterRequests()">
                 <option value="">All Status</option>
                 <option>Pending Review</option>
@@ -241,11 +254,8 @@
               </select>
               <select id="filterType" onchange="filterRequests()">
                 <option value="">All Types</option>
-                <option>Finance</option>
-                <option>IT</option>
-                <option>Procurement</option>
-                <option>Legal</option>
-                <option>HR</option>
+                <option>Finance</option><option>IT</option><option>Procurement</option>
+                <option>Legal</option><option>HR</option>
               </select>
               <button class="btn btn-success btn-sm" onclick="exportExcel()">📥 Export Excel</button>
             </div>
@@ -254,14 +264,8 @@
             <table>
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Title</th>
-                  <th>Type</th>
-                  <th>Status</th>
-                  <th>Submitted By</th>
-                  <th>Date</th>
-                  <th>Latest Comment</th>
-                  <th>Action</th>
+                  <th>#</th><th>Title</th><th>Type</th><th>Status</th>
+                  <th>Submitted By</th><th>Date</th><th>Latest Comment</th><th>Action</th>
                 </tr>
               </thead>
               <tbody id="requestsBody"></tbody>
@@ -273,33 +277,30 @@
       <!-- New Request -->
       <div id="pageNewRequest" class="hidden">
         <div class="form-card">
-          <h3>➕ New Request</h3>
+          <h3>➕ Submit New Request</h3>
           <div class="form-row">
             <div class="form-group">
-              <label>Title</label>
+              <label>Title *</label>
               <input type="text" id="reqTitle" placeholder="Request title">
             </div>
             <div class="form-group">
-              <label>Request Type</label>
+              <label>Request Type *</label>
               <select id="reqType">
-                <option>Finance</option>
-                <option>IT</option>
-                <option>Procurement</option>
-                <option>Legal</option>
-                <option>HR</option>
+                <option>Finance</option><option>IT</option><option>Procurement</option>
+                <option>Legal</option><option>HR</option>
               </select>
             </div>
           </div>
           <div class="form-group">
-            <label>Description</label>
-            <textarea id="reqDesc" rows="4" placeholder="Describe your request..."></textarea>
+            <label>Description *</label>
+            <textarea id="reqDesc" rows="4" placeholder="Describe your request in detail..."></textarea>
           </div>
           <div class="form-group">
             <label>Attach Document (optional)</label>
             <input type="file" id="reqFile" accept=".pdf,.doc,.docx,.xlsx,.png,.jpg">
           </div>
           <div class="form-actions">
-            <button class="btn btn-primary" onclick="submitRequest()">Submit Request</button>
+            <button class="btn btn-primary" onclick="submitRequest()" style="width:auto;">Submit Request</button>
             <button class="btn btn-secondary" onclick="showPage('requests')">Cancel</button>
           </div>
         </div>
@@ -316,8 +317,8 @@
             <div class="detail-actions" id="detailActions"></div>
           </div>
           <div class="form-group">
-            <label>Description</label>
-            <div id="detailDesc" style="padding:0.6rem;background:#f8fafc;border-radius:8px;font-size:0.9rem;"></div>
+            <label style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;">Description</label>
+            <div id="detailDesc" style="padding:0.75rem 1rem;background:#f8fafc;border-radius:10px;font-size:0.9rem;border:1px solid #e2e8f0;margin-top:0.3rem;"></div>
           </div>
           <div class="section-title">📎 Documents</div>
           <div id="detailDocs"></div>
@@ -343,7 +344,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" id="modalConfirmBtn" onclick="confirmAction()">Confirm</button>
+      <button class="btn btn-primary" style="width:auto;" onclick="confirmAction()">Confirm</button>
     </div>
   </div>
 </div>
@@ -357,7 +358,7 @@ let currentAction = null;
 let currentRequestId = null;
 let socket = null;
 
-// ─── Auth ───────────────────────────────────────────────
+// ─── Auth ────────────────────────────────────────────────
 function toggleAuth() {
   document.getElementById('loginForm').classList.toggle('hidden');
   document.getElementById('registerForm').classList.toggle('hidden');
@@ -375,7 +376,7 @@ async function login() {
     const data = await res.json();
     if (!res.ok) return showToast(data.message || 'Login failed');
     saveSession(data);
-  } catch (e) { showToast('Connection error — is the server running?'); }
+  } catch (e) { showToast('Connection error'); }
 }
 
 async function register() {
@@ -411,22 +412,17 @@ function logout() {
   document.getElementById('appPage').classList.add('hidden');
 }
 
-// ─── Init ────────────────────────────────────────────────
+// ─── Init ─────────────────────────────────────────────────
 function initApp() {
   document.getElementById('authPage').classList.add('hidden');
   document.getElementById('appPage').classList.remove('hidden');
   document.getElementById('sidebarName').textContent = currentUser.name;
   document.getElementById('sidebarRole').textContent = roleLabel(currentUser.role);
-
-  // Show/hide nav items
   if (currentUser.role === 'requester') {
     document.getElementById('navNew').classList.remove('hidden');
   }
-
-  // Socket
   socket = io(API);
   socket.on('requestUpdate', () => { loadRequests(); loadDashboard(); });
-
   loadDashboard();
   loadRequests();
 }
@@ -436,23 +432,21 @@ function roleLabel(role) {
   return map[role] || role;
 }
 
-// ─── Pages ───────────────────────────────────────────────
+// ─── Pages ────────────────────────────────────────────────
 function showPage(page) {
-  ['dashboard','requests','newRequest','detail'].forEach(p => {
-    document.getElementById('page' + p.charAt(0).toUpperCase() + p.slice(1)).classList.add('hidden');
+  ['Dashboard','Requests','NewRequest','Detail'].forEach(p => {
+    document.getElementById('page' + p).classList.add('hidden');
   });
-  const titles = { dashboard: 'Dashboard', requests: 'Requests', newRequest: 'New Request', detail: 'Request Detail' };
+  const titles = { dashboard: 'Dashboard', requests: 'All Requests', newRequest: 'New Request', detail: 'Request Detail' };
   document.getElementById('pageTitle').textContent = titles[page] || page;
-
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-
   if (page === 'dashboard') { document.getElementById('pageDashboard').classList.remove('hidden'); document.querySelectorAll('.nav-item')[0].classList.add('active'); }
   else if (page === 'requests') { document.getElementById('pageRequests').classList.remove('hidden'); document.querySelectorAll('.nav-item')[1].classList.add('active'); }
   else if (page === 'newRequest') { document.getElementById('pageNewRequest').classList.remove('hidden'); }
   else if (page === 'detail') { document.getElementById('pageDetail').classList.remove('hidden'); }
 }
 
-// ─── Dashboard ───────────────────────────────────────────
+// ─── Dashboard ────────────────────────────────────────────
 async function loadDashboard() {
   try {
     const res = await fetch(`${API}/api/requests/stats/dashboard`, { headers: { Authorization: `Bearer ${token}` } });
@@ -468,7 +462,7 @@ async function loadDashboard() {
 
 function renderBars(containerId, data) {
   const container = document.getElementById(containerId);
-  if (!data.length) { container.innerHTML = '<p style="color:#94a3b8;font-size:0.85rem;">No data yet</p>'; return; }
+  if (!data.length) { container.innerHTML = '<p style="color:#94a3b8;font-size:0.85rem;padding:1rem 0;">No data yet</p>'; return; }
   const max = Math.max(...data.map(d => d.count));
   container.innerHTML = data.map(d => `
     <div class="bar">
@@ -478,7 +472,7 @@ function renderBars(containerId, data) {
     </div>`).join('');
 }
 
-// ─── Requests ────────────────────────────────────────────
+// ─── Requests ─────────────────────────────────────────────
 async function loadRequests() {
   try {
     const res = await fetch(`${API}/api/requests`, { headers: { Authorization: `Bearer ${token}` } });
@@ -492,9 +486,8 @@ function filterRequests() {
   const status = document.getElementById('filterStatus').value;
   const type = document.getElementById('filterType').value;
   const filtered = allRequests.filter(r =>
-    (!search || r.title.toLowerCase().includes(search) || (r.submittedByName || '').toLowerCase().includes(search)) &&
-    (!status || r.status === status) &&
-    (!type || r.requestType === type)
+    (!search || r.title.toLowerCase().includes(search) || (r.submittedByName||'').toLowerCase().includes(search)) &&
+    (!status || r.status === status) && (!type || r.requestType === type)
   );
   renderRequests(filtered);
 }
@@ -504,47 +497,43 @@ function renderRequests(list) {
   if (!list.length) { body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:2rem;">No requests found</td></tr>'; return; }
   body.innerHTML = list.map((r, i) => `
     <tr>
-      <td>${i + 1}</td>
+      <td style="color:#94a3b8;font-weight:700;">${i+1}</td>
       <td><strong>${r.title}</strong></td>
       <td><span class="badge badge-${r.requestType.toLowerCase()}">${r.requestType}</span></td>
       <td>${statusBadge(r.status)}</td>
       <td>${r.submittedByName || '-'}</td>
       <td>${new Date(r.createdAt).toLocaleDateString()}</td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.latestComment || '-'}</td>
-      <td><button class="btn btn-secondary btn-sm" onclick="viewRequest('${r._id}')">View</button></td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#64748b;">${r.latestComment || '-'}</td>
+      <td><button class="btn btn-secondary btn-sm" onclick="viewRequest('${r._id}')">View →</button></td>
     </tr>`).join('');
 }
 
 function statusBadge(status) {
-  const map = {
-    'Pending Review': 'badge-pending', 'Under Review': 'badge-review',
-    'Needs Clarification': 'badge-clarify', 'Approved L1': 'badge-l1',
-    'Pending Final': 'badge-review', 'Approved': 'badge-approved', 'Rejected': 'badge-rejected'
-  };
-  return `<span class="badge ${map[status] || ''}">${status}</span>`;
+  const map = { 'Pending Review':'badge-pending','Under Review':'badge-review','Needs Clarification':'badge-clarify','Approved L1':'badge-l1','Pending Final':'badge-review','Approved':'badge-approved','Rejected':'badge-rejected' };
+  return `<span class="badge ${map[status]||''}">${status}</span>`;
 }
 
-// ─── New Request ─────────────────────────────────────────
+// ─── New Request ──────────────────────────────────────────
 async function submitRequest() {
   const title = document.getElementById('reqTitle').value;
   const description = document.getElementById('reqDesc').value;
   const requestType = document.getElementById('reqType').value;
   if (!title || !description) return showToast('Please fill all required fields');
 
-  let document = null;
-  const file = document.getElementById ? null : null;
-  const fileEl = window.document.getElementById('reqFile');
+  const fileEl = document.getElementById('reqFile');
+  let attachedDoc = null;
   if (fileEl.files[0]) {
-    document = await fileToBase64(fileEl.files[0]);
+    attachedDoc = await fileToBase64(fileEl.files[0]);
   }
 
   try {
     const res = await fetch(`${API}/api/requests`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ title, description, requestType, document })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ title, description, requestType, document: attachedDoc })
     });
     if (!res.ok) return showToast('Failed to submit');
-    showToast('✅ Request submitted!');
+    showToast('✅ Request submitted successfully!');
     document.getElementById('reqTitle').value = '';
     document.getElementById('reqDesc').value = '';
     fileEl.value = '';
@@ -553,109 +542,99 @@ async function submitRequest() {
   } catch (e) { showToast('Error submitting request'); }
 }
 
-// ─── Request Detail ──────────────────────────────────────
+// ─── Request Detail ───────────────────────────────────────
 async function viewRequest(id) {
   try {
     const res = await fetch(`${API}/api/requests/${id}`, { headers: { Authorization: `Bearer ${token}` } });
     const r = await res.json();
     currentRequestId = id;
-    window.document.getElementById('detailTitle').textContent = r.title;
-    window.document.getElementById('detailMeta').innerHTML = `${statusBadge(r.status)} &nbsp; <span class="badge badge-${r.requestType.toLowerCase()}">${r.requestType}</span> &nbsp; Submitted by ${r.submittedByName} on ${new Date(r.createdAt).toLocaleDateString()}`;
-    window.document.getElementById('detailDesc').textContent = r.description;
+    document.getElementById('detailTitle').textContent = r.title;
+    document.getElementById('detailMeta').innerHTML = `${statusBadge(r.status)} <span class="badge badge-${r.requestType.toLowerCase()}">${r.requestType}</span> <span>by ${r.submittedByName} · ${new Date(r.createdAt).toLocaleDateString()}</span>`;
+    document.getElementById('detailDesc').textContent = r.description;
 
-    // Documents
-    const docsEl = window.document.getElementById('detailDocs');
+    const docsEl = document.getElementById('detailDocs');
     if (r.documents && r.documents.length) {
       docsEl.innerHTML = r.documents.map(d => `
         <div class="doc-item">
-          <div><div class="doc-name">📎 ${d.name}</div><div class="doc-version">v${d.version} — ${d.uploadedBy} — ${new Date(d.uploadedAt).toLocaleDateString()}</div></div>
-          ${d.data ? `<button class="btn btn-secondary btn-sm" onclick="downloadDoc('${d.name}','${d.data}')">Download</button>` : ''}
+          <div><div class="doc-name">📎 ${d.name}</div><div class="doc-version">v${d.version} · ${d.uploadedBy} · ${new Date(d.uploadedAt).toLocaleDateString()}</div></div>
+          ${d.data ? `<button class="btn btn-secondary btn-sm" onclick="downloadDoc('${d.name}','${d.data}')">⬇ Download</button>` : ''}
         </div>`).join('');
     } else { docsEl.innerHTML = '<p style="color:#94a3b8;font-size:0.85rem;">No documents attached</p>'; }
 
-    // Activity
-    const actEl = window.document.getElementById('detailActivity');
+    const actEl = document.getElementById('detailActivity');
     if (r.activity && r.activity.length) {
       actEl.innerHTML = [...r.activity].reverse().map(a => `
         <div class="activity-item">
           <div class="activity-dot"></div>
           <div class="activity-content">
             <div class="activity-action">${a.action}</div>
-            <div class="activity-by">by ${a.performedByName} — ${new Date(a.timestamp).toLocaleString()}</div>
+            <div class="activity-by">by ${a.performedByName} · ${new Date(a.timestamp).toLocaleString()}</div>
             ${a.comment ? `<div class="activity-comment">${a.comment}</div>` : ''}
           </div>
         </div>`).join('');
     } else { actEl.innerHTML = '<p style="color:#94a3b8;font-size:0.85rem;">No activity yet</p>'; }
 
-    // Actions based on role & status
-    const actionsEl = window.document.getElementById('detailActions');
+    const actionsEl = document.getElementById('detailActions');
     actionsEl.innerHTML = '';
     const role = currentUser.role;
     const status = r.status;
-
-    if ((role === 'approver_l1_finance' && ['Finance','IT','Procurement'].includes(r.requestType) && status === 'Pending Review') ||
-        (role === 'approver_l1_legal' && ['Legal','HR'].includes(r.requestType) && status === 'Pending Review')) {
+    if ((role==='approver_l1_finance' && ['Finance','IT','Procurement'].includes(r.requestType) && status==='Pending Review') ||
+        (role==='approver_l1_legal' && ['Legal','HR'].includes(r.requestType) && status==='Pending Review')) {
       actionsEl.innerHTML += actionBtns(['approve','reject','clarify'], r);
-    } else if (role === 'approver_final' && (status === 'Approved L1')) {
+    } else if (role==='approver_final' && status==='Approved L1') {
       actionsEl.innerHTML += actionBtns(['approve','reject','clarify'], r);
-    } else if (role === 'requester' && status === 'Needs Clarification') {
-      actionsEl.innerHTML += `<button class="btn btn-warning btn-sm" onclick="openModal('resubmit','${id}')">Resubmit with Clarification</button>`;
+    } else if (role==='requester' && status==='Needs Clarification') {
+      actionsEl.innerHTML += `<button class="btn btn-warning btn-sm" onclick="openModal('resubmit','${id}')">🔄 Resubmit</button>`;
     }
-
-    // WhatsApp notify
     const waMsg = encodeURIComponent(`ApproveFlow Update:\nRequest: ${r.title}\nType: ${r.requestType}\nStatus: ${r.status}\nSubmitted by: ${r.submittedByName}`);
     actionsEl.innerHTML += ` <a href="https://wa.me/?text=${waMsg}" target="_blank" class="btn btn-success btn-sm">💬 WhatsApp</a>`;
-
     showPage('detail');
   } catch (e) { showToast('Error loading request'); }
 }
 
 function actionBtns(actions, r) {
   return actions.map(a => {
-    const map = { approve: ['btn-success','✅ Approve'], reject: ['btn-danger','❌ Reject'], clarify: ['btn-warning','❓ Clarify'] };
+    const map = { approve:['btn-success','✅ Approve'], reject:['btn-danger','❌ Reject'], clarify:['btn-warning','❓ Clarify'] };
     return `<button class="btn ${map[a][0]} btn-sm" onclick="openModal('${a}','${r._id}')">${map[a][1]}</button>`;
   }).join(' ');
 }
 
-// ─── Modal ───────────────────────────────────────────────
+// ─── Modal ────────────────────────────────────────────────
 function openModal(action, requestId) {
-  currentAction = action;
-  currentRequestId = requestId;
-  const titles = { approve: '✅ Approve Request', reject: '❌ Reject Request', clarify: '❓ Request Clarification', resubmit: '🔄 Resubmit Request' };
-  window.document.getElementById('modalTitle').textContent = titles[action] || action;
-  window.document.getElementById('modalComment').value = '';
-  window.document.getElementById('modalFile').value = '';
-  window.document.getElementById('actionModal').classList.remove('hidden');
+  currentAction = action; currentRequestId = requestId;
+  const titles = { approve:'✅ Approve Request', reject:'❌ Reject Request', clarify:'❓ Request Clarification', resubmit:'🔄 Resubmit Request' };
+  document.getElementById('modalTitle').textContent = titles[action] || action;
+  document.getElementById('modalComment').value = '';
+  document.getElementById('modalFile').value = '';
+  document.getElementById('actionModal').classList.remove('hidden');
 }
 
 function closeModal() {
-  window.document.getElementById('actionModal').classList.add('hidden');
+  document.getElementById('actionModal').classList.add('hidden');
   currentAction = null;
 }
 
 async function confirmAction() {
-  const comment = window.document.getElementById('modalComment').value;
-  const fileEl = window.document.getElementById('modalFile');
-  let document = null;
-  if (fileEl.files[0]) document = await fileToBase64(fileEl.files[0]);
-
+  const comment = document.getElementById('modalComment').value;
+  const fileEl = document.getElementById('modalFile');
+  let attachedDoc = null;
+  if (fileEl.files[0]) attachedDoc = await fileToBase64(fileEl.files[0]);
   try {
     const res = await fetch(`${API}/api/requests/${currentRequestId}/action`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ action: currentAction, comment, document })
+      body: JSON.stringify({ action: currentAction, comment, document: attachedDoc })
     });
     if (!res.ok) return showToast('Action failed');
     closeModal();
     showToast('✅ Action completed!');
     viewRequest(currentRequestId);
-    loadRequests();
-    loadDashboard();
+    loadRequests(); loadDashboard();
   } catch (e) { showToast('Error performing action'); }
 }
 
-// ─── Helpers ─────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────
 function fileToBase64(file) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const reader = new FileReader();
     reader.onload = () => resolve({ name: file.name, data: reader.result });
     reader.readAsDataURL(file);
@@ -663,7 +642,7 @@ function fileToBase64(file) {
 }
 
 function downloadDoc(name, data) {
-  const a = window.document.createElement('a');
+  const a = document.createElement('a');
   a.href = data; a.download = name; a.click();
 }
 
@@ -680,16 +659,13 @@ function exportExcel() {
 }
 
 function showToast(msg) {
-  const t = window.document.createElement('div');
+  const t = document.createElement('div');
   t.className = 'toast'; t.textContent = msg;
-  window.document.body.appendChild(t);
+  document.body.appendChild(t);
   setTimeout(() => t.remove(), 3000);
 }
 
-// ─── Auto-login ──────────────────────────────────────────
 if (token && currentUser) initApp();
-
-// PWA
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js');
 </script>
 </body>
