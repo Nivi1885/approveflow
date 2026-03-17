@@ -40,11 +40,11 @@ router.post('/', auth, async (req, res) => {
       activity: [{ action: 'Submitted', performedByName: req.user.name, comment: 'Request submitted' }]
     });
     await request.save();
-    const io = req.app.get('io');
-    io.emit('requestUpdate', request);
+   const { title, description, requestType, type, attachedDoc } = req.body;
+    if (!title || !description || (!requestType && !type)) {
     res.status(201).json(request);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    l1ApproverGroup: TYPE_GROUP[requestType || type] || 'B',
   }
 });
 
